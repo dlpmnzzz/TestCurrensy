@@ -4,8 +4,6 @@ import android.app.AlertDialog
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,32 +46,38 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
                 binding.toSpinner.text = it
             }
         }
+        viewModel.fromResult.observe(viewLifecycleOwner) {
+            binding.fromEdit.setText(it)
+        }
+        viewModel.toResult.observe(viewLifecycleOwner) {
+            binding.toEdit.setText(it)
+        }
     }
 
     private fun initEditTexts() {
         binding.fromEdit.setAfterTextChangeListener {
-            if (!isSearchEnteredFrom) {
+            if (!isSearchEnteredFrom && viewModel.fromResult.value != binding.fromEdit.text.toString()) {
                 isSearchEnteredFrom = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredFrom = false
                     viewModel.convertCurrency(
-                        binding.fromEdit.text.toString().toDouble(),
+                        binding.fromEdit.text.toString().toFloat(),
                         FROM_TYPE
                     )
-                }, 500)
+                }, 1000)
             }
         }
 
         binding.toEdit.setAfterTextChangeListener {
-            if (!isSearchEnteredTo) {
+            if (!isSearchEnteredTo && viewModel.toResult.value != binding.toEdit.text.toString()) {
                 isSearchEnteredTo = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredTo = false
                     viewModel.convertCurrency(
-                        binding.fromEdit.text.toString().toDouble(),
+                        binding.fromEdit.text.toString().toFloat(),
                         TO_TYPE
                     )
-                }, 500)
+                }, 1000)
             }
         }
     }
@@ -92,12 +96,12 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
         alertDialog.setNegativeButton("Cancel") { dialog, _ ->
             selectedItemPosition = -1
             dialog.cancel()
-        }.setPositiveButton("Ok") { _, which ->
+        }.setPositiveButton("Ok") { _, _ ->
             if (selectedItemPosition != -1) {
                 viewModel.itemSelected(selectedItemPosition, type)
             }
         }
-        alertDialog.setTitle("AlertDialog")
+        alertDialog.setTitle("Choose a currency")
         val checkedItem = 1
         alertDialog.setSingleChoiceItems(
             viewModel.items,
