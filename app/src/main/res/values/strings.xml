@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TestCurrency</string>
+    <string name="edit_hint">100</string>
+    <string name="you_send">You send</string>
+    <string name="usd_string">USD</string>
+    <string name="eur_string">EUR</string>
+    <string name="they_get">They get</string>
 </resources>
