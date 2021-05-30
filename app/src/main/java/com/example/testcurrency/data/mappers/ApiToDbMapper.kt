@@ -5,6 +5,6 @@ import com.example.testcurrency.data.model.remote.CurrencyResponseEntity
 
 class ApiToDbMapper : Mapper<CurrencyResponseEntity, DbCurrency> {
     override fun map(item: CurrencyResponseEntity): DbCurrency {
-        return DbCurrency(item.name, item.rates)
+        return DbCurrency(item.name, item.rates, item.nextUpdateTime)
     }
 }

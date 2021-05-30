@@ -10,4 +10,6 @@ data class DbCurrency(
     val name: String,
     @Expose
     val rates: Map<String, Float>,
+
+    val nextUpdateTime: Long
 )

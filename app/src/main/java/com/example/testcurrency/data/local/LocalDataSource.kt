@@ -3,7 +3,7 @@ package com.example.testcurrency.data.local
 import com.example.testcurrency.data.model.local.DbCurrency
 
 interface LocalDataSource {
-    suspend fun getCurrency(name: String): DbCurrency
+    suspend fun getCurrency(name: String): DbCurrency?
     suspend fun saveCurrency(item: DbCurrency)
 }
 

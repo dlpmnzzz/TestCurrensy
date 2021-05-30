@@ -30,14 +30,19 @@ class RepositoryImpl(
         if (networkCall.isSuccessful) {
             val body = networkCall.body()
             local.saveCurrency(ApiToDbMapper.map(body!!))
-            emit(getFromLocal(name))
+            val localItem = getFromLocal(name)
+            if (localItem is Result.Loading) {
+                emit(Result.Error(Exception("Can't get currency for $name")))
+            } else {
+                emit(localItem)
+            }
         } else {
             emit(Result.Error(Exception(networkCall.message())))
         }
     }
 
-    private suspend fun getFromLocal(name: String): Result.Success<Currency> {
-        val dbSource = local.getCurrency(name)
+    private suspend fun getFromLocal(name: String): Result<Currency> {
+        val dbSource = local.getCurrency(name) ?: return Result.Loading
         val item = dbToUiMapper.map(dbSource)
         return Result.Success(item)
     }
