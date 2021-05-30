@@ -39,11 +39,13 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
         viewModel.selectedFrom.observe(viewLifecycleOwner) { item ->
             item?.let {
                 binding.fromSpinner.text = it
+                convertFrom()
             }
         }
         viewModel.selectedTo.observe(viewLifecycleOwner) { item ->
             item?.let {
                 binding.toSpinner.text = it
+                convertTo()
             }
         }
         viewModel.fromResult.observe(viewLifecycleOwner) {
@@ -60,13 +62,7 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
                 isSearchEnteredFrom = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredFrom = false
-                    val str = binding.fromEdit.text.toString()
-                    if (str.isNotEmpty()) {
-                        viewModel.convertCurrency(
-                            str.toFloat(),
-                            FROM_TYPE
-                        )
-                    }
+                    convertFrom()
                 }, 1000)
             }
         }
@@ -76,16 +72,29 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
                 isSearchEnteredTo = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredTo = false
-                    val str = binding.toEdit.text.toString()
-                    if (str.isNotEmpty()) {
-                        viewModel.convertCurrency(
-                            str.toFloat(),
-                            TO_TYPE
-                        )
-                    }
-
+                    convertTo()
                 }, 1000)
             }
+        }
+    }
+
+    private fun convertFrom() {
+        val str = binding.fromEdit.text.toString()
+        if (str.isNotEmpty()) {
+            viewModel.convertCurrency(
+                str.toFloat(),
+                FROM_TYPE
+            )
+        }
+    }
+
+    private fun convertTo() {
+        val str = binding.toEdit.text.toString()
+        if (str.isNotEmpty()) {
+            viewModel.convertCurrency(
+                str.toFloat(),
+                TO_TYPE
+            )
         }
     }
 
@@ -109,7 +118,7 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
             }
         }
         alertDialog.setTitle("Choose a currency")
-        val checkedItem = 1
+        val checkedItem = getCheckedItemPosition(type)
         alertDialog.setSingleChoiceItems(
             viewModel.items,
             checkedItem
@@ -119,5 +128,14 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
         val alert: AlertDialog = alertDialog.create()
         alert.setCanceledOnTouchOutside(false)
         alert.show()
+    }
+
+    private fun getCheckedItemPosition(type: String): Int {
+        val code = if (type == FROM_TYPE) {
+            viewModel.selectedFrom.value
+        } else {
+            viewModel.selectedTo.value
+        }
+        return viewModel.items.indexOf(code)
     }
 }
