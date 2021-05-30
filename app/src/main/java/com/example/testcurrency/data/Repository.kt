@@ -24,20 +24,25 @@ class RepositoryImpl(
 
     override suspend fun getCurrency(name: String): Flow<Result<Currency>> = flow {
         emit(Result.Loading)
-        emit(getFromLocal(name))
+        val oldLocalResult = local.getCurrency(name)
+        emit(toUiResultOrLoading(oldLocalResult))
 
-        val networkCall = remote.getCurrency(name)
-        if (networkCall.isSuccessful) {
-            val body = networkCall.body()
-            local.saveCurrency(ApiToDbMapper.map(body!!))
+        if (oldLocalResult != null &&
+            oldLocalResult.nextUpdateTime > System.currentTimeMillis()) {
+            val networkCall = remote.getCurrency(name)
+            if (networkCall.isSuccessful) {
+                val body = networkCall.body()
+                local.saveCurrency(ApiToDbMapper.map(body!!))
+            } else {
+                emit(Result.Error(Exception(networkCall.message())))
+            }
+
             val localItem = getFromLocal(name)
             if (localItem is Result.Loading) {
                 emit(Result.Error(Exception("Can't get currency for $name")))
             } else {
                 emit(localItem)
             }
-        } else {
-            emit(Result.Error(Exception(networkCall.message())))
         }
     }
 
@@ -47,16 +52,11 @@ class RepositoryImpl(
         return Result.Success(item)
     }
 
-
-    val cr = Currency(
-        "USD", hashMapOf(
-            "USD" to 1f,
-            "EUR" to 0.82f,
-            "RUB" to 73.41f,
-        ))
-
-}
-
-private fun DbCurrency.toUiEnity(): Result.Loading {
-    TODO("Not yet implemented")
+    private fun toUiResultOrLoading(currency: DbCurrency?) : Result<Currency>{
+        return if (currency == null) {
+            Result.Loading
+        } else {
+            Result.Success(dbToUiMapper.map(currency))
+        }
+    }
 }
