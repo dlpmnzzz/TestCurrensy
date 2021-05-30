@@ -52,6 +52,11 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
         viewModel.toResult.observe(viewLifecycleOwner) {
             binding.toEdit.setText(it)
         }
+        viewModel.result.observe(viewLifecycleOwner) {
+            var n = it
+            var i = 10
+            i += 5
+        }
     }
 
     private fun initEditTexts() {

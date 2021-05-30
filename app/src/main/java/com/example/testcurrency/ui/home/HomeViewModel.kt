@@ -2,29 +2,39 @@ package com.example.testcurrency.ui.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.testcurrency.ui.base.BaseViewModel
 import com.example.testcurrency.usecases.ConvertCurrencyParam
 import com.example.testcurrency.usecases.ConvertCurrencyUseCase
+import com.example.testcurrency.utils.Result
 import com.example.testcurrency.utils.SingleLiveEvent
+import com.example.testcurrency.utils.cancelIfActive
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val convertUseCase: ConvertCurrencyUseCase,
     listLabels: List<String>
-) :
-    BaseViewModel() {
+) : BaseViewModel() {
+
+    private var resultJob: Job? = null
+
+    private val _result : MutableLiveData<Result<Float>> = MutableLiveData()
 
     private val fromItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val toItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val _fromResult = SingleLiveEvent<String>()
     private val _toResult = SingleLiveEvent<String>()
-    private val _selectedFrom = MutableLiveData<String>("USD")
-    private val _selectedTo = MutableLiveData<String>("EUR")
+    private val _selectedFrom = MutableLiveData("USD")
+    private val _selectedTo = MutableLiveData("EUR")
 
     val selectedFrom : LiveData<String> = _selectedFrom
     val selectedTo : LiveData<String> = _selectedTo
     val fromResult: LiveData<String> = _fromResult
     val toResult: LiveData<String> = _toResult
     val items = listLabels.toTypedArray()
+    val result : LiveData<Result<Float>> = _result
 
     fun itemSelected(which: Int, type: String) {
         val item = getItemsByTypes(type)[which]
@@ -33,14 +43,16 @@ class HomeViewModel(
     }
 
     fun convertCurrency(amount: Float, type: String) {
-        convertUseCase.cancel()
         val from = getSelected(type)
         val to = getAnotherSelected(type)
         if (from != null && to != null) {
             val param = ConvertCurrencyParam(amount, from, to)
-            convertUseCase.execute(param, onComplete = { result ->
-                setCurrencyResult(type, result)
-            }, onError = { showErrorMessage(it) })
+            resultJob?.cancelIfActive()
+            resultJob = viewModelScope.launch {
+                convertUseCase.invoke(param).collect { result ->
+                    _result.value = result
+                }
+            }
         } else {
             showErrorMessage(Exception("Choose converted currency"))
         }
