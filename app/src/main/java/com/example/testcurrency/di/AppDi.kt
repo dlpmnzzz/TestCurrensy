@@ -10,6 +10,7 @@ import com.example.testcurrency.data.mappers.DbToUiMapper
 import com.example.testcurrency.data.remote.RemoteDataSource
 import com.example.testcurrency.data.remote.RemoteDataSourceImp
 import com.example.testcurrency.data.remote.api.RetrofitBuilder
+import com.example.testcurrency.data.util.NetworkUtils
 import com.example.testcurrency.ui.home.HomeViewModel
 import com.example.testcurrency.usecases.ConvertCurrencyUseCase
 import kotlinx.coroutines.Dispatchers
@@ -23,12 +24,13 @@ val appModule = module {
     single { ConvertCurrencyUseCase(Dispatchers.IO, get()) }
 
     single<Repository> { RepositoryImpl(get(), get(), get(), get()) }
-    single<RemoteDataSource> { RemoteDataSourceImp(RetrofitBuilder.apiService) }
+    single<RemoteDataSource> { RemoteDataSourceImp(RetrofitBuilder.apiService, get()) }
     single<LocalDataSource> { LocalDataSourceImp(get()) }
 
     single { AppDatabase.getDatabase(androidApplication()) }
     single { DbToUiMapper() }
     single { ApiToDbMapper() }
+    single { NetworkUtils(androidApplication()) }
 }
 
 private val listLabels = listOf("RUB", "USD", "EUR")

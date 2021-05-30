@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.flow
 import java.lang.Exception
 
 interface Repository {
-    suspend fun getCurrency(name: String) : Flow<Result<Currency>>
+    suspend fun getCurrency(name: String): Flow<Result<Currency>>
 }
 
 class RepositoryImpl(
@@ -28,7 +28,8 @@ class RepositoryImpl(
         emit(toUiResultOrLoading(oldLocalResult))
 
         if (oldLocalResult != null &&
-            oldLocalResult.nextUpdateTime > System.currentTimeMillis()) {
+            oldLocalResult.nextUpdateTime > System.currentTimeMillis()
+        ) {
             val networkCall = remote.getCurrency(name)
             if (networkCall.isSuccessful) {
                 val body = networkCall.body()
@@ -52,7 +53,7 @@ class RepositoryImpl(
         return Result.Success(item)
     }
 
-    private fun toUiResultOrLoading(currency: DbCurrency?) : Result<Currency>{
+    private fun toUiResultOrLoading(currency: DbCurrency?): Result<Currency> {
         return if (currency == null) {
             Result.Loading
         } else {
