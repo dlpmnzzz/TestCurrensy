@@ -9,5 +9,5 @@ data class DbCurrency(
     @PrimaryKey
     val name: String,
     @Expose
-    val rates: Map<String, Float>
+    val rates: Map<String, Float>,
 )

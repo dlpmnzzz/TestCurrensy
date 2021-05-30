@@ -5,10 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.testcurrency.data.model.local.DbCurrency
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 
 @Database(entities = [DbCurrency::class], version = 1, exportSchema = false)
 @TypeConverters(MapConverter::class)
@@ -25,22 +22,6 @@ abstract class AppDatabase : RoomDatabase() {
         private fun buildDatabase(appContext: Context) =
             Room.databaseBuilder(appContext, AppDatabase::class.java, "currency")
                 .fallbackToDestructiveMigration()
-                .addCallback(object :  RoomDatabase.Callback() {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        super.onCreate(db)
-                        GlobalScope.launch {
-                            val currency = DbCurrency("USD", hashMapOf("USD" to 1f,
-                                "EUR" to 0.82f,
-                                "RUB" to 73.41f,))
-                            val currency1 = DbCurrency("EUR", hashMapOf("USD" to 1f,
-                                "USD" to 1.22f,
-                                "RUB" to 89.45f,))
-                            val dao = getDatabase(appContext).currencyDao()
-                            dao.insert(currency)
-                            dao.insert(currency1)
-                        }
-                    }
-                })
                 .build()
     }
 }
