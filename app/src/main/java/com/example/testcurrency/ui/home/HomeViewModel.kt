@@ -19,6 +19,7 @@ class HomeViewModel(
 ) : BaseViewModel() {
 
     private var resultJob: Job? = null
+    private var notConvert = false
 
     private val fromItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val toItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
@@ -40,6 +41,9 @@ class HomeViewModel(
     }
 
     fun convertCurrency(amount: Float, type: String) {
+        if (notConvert) {
+            return
+        }
         val from = getSelected(type)
         val to = getAnotherSelected(type)
         if (from != null && to != null) {
@@ -58,6 +62,14 @@ class HomeViewModel(
         } else {
             showErrorMessage(Exception("Choose converted currency"))
         }
+    }
+
+    fun swap() {
+        notConvert = true
+        val tmp = _selectedTo.value
+        _selectedTo.value = _selectedFrom.value
+        notConvert = false
+        _selectedFrom.value = tmp
     }
 
     private fun setCurrencyResult(type: String, result: Float) {

@@ -29,6 +29,7 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
             inflater, container, false).apply {
             lifecycleOwner = viewLifecycleOwner
         }
+        binding.viewmodel = viewModel
         return binding.root
     }
 
