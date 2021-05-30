@@ -33,4 +33,19 @@ val appModule = module {
     single { NetworkUtils(androidApplication()) }
 }
 
-private val listLabels = listOf("RUB", "USD", "EUR")
+private val listLabels = listOf(
+    "RUB",
+    "USD",
+    "EUR",
+    "CHF",
+    "GBP",
+    "JPY",
+    "UAH",
+    "KZT",
+    "BYN",
+    "TRY",
+    "CNY",
+    "AUD",
+    "CAD",
+    "PLN"
+)

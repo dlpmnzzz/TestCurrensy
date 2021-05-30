@@ -60,10 +60,13 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
                 isSearchEnteredFrom = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredFrom = false
-                    viewModel.convertCurrency(
-                        binding.fromEdit.text.toString().toFloat(),
-                        FROM_TYPE
-                    )
+                    val str = binding.fromEdit.text.toString()
+                    if (str.isNotEmpty()) {
+                        viewModel.convertCurrency(
+                            str.toFloat(),
+                            FROM_TYPE
+                        )
+                    }
                 }, 1000)
             }
         }
@@ -73,10 +76,14 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
                 isSearchEnteredTo = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredTo = false
-                    viewModel.convertCurrency(
-                        binding.fromEdit.text.toString().toFloat(),
-                        TO_TYPE
-                    )
+                    val str = binding.toEdit.text.toString()
+                    if (str.isNotEmpty()) {
+                        viewModel.convertCurrency(
+                            str.toFloat(),
+                            TO_TYPE
+                        )
+                    }
+
                 }, 1000)
             }
         }

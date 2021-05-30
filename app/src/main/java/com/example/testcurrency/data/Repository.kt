@@ -27,7 +27,7 @@ class RepositoryImpl(
         val oldLocalResult = local.getCurrency(name)
         emit(toUiResultOrLoading(oldLocalResult))
 
-        if (oldLocalResult != null &&
+        if (oldLocalResult == null ||
             oldLocalResult.nextUpdateTime > System.currentTimeMillis()
         ) {
             val networkCall = remote.getCurrency(name)
