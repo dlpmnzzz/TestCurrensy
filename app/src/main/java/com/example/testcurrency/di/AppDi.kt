@@ -5,6 +5,7 @@ import com.example.testcurrency.data.RepositoryImpl
 import com.example.testcurrency.data.local.AppDatabase
 import com.example.testcurrency.data.local.LocalDataSource
 import com.example.testcurrency.data.local.LocalDataSourceImp
+import com.example.testcurrency.data.mappers.DbToUiMapper
 import com.example.testcurrency.data.remote.RemoteDataSource
 import com.example.testcurrency.data.remote.RemoteDataSourceImp
 import com.example.testcurrency.ui.home.HomeViewModel
@@ -19,11 +20,12 @@ val appModule = module {
 
     single { ConvertCurrencyUseCase(Dispatchers.IO, get()) }
 
-    single<Repository> { RepositoryImpl(get(), get()) }
+    single<Repository> { RepositoryImpl(get(), get(), get()) }
     single<RemoteDataSource> { RemoteDataSourceImp() }
     single<LocalDataSource> { LocalDataSourceImp(get()) }
 
     single { AppDatabase.getDatabase(androidApplication()) }
+    single { DbToUiMapper() }
 }
 
 private val listLabels = listOf("RUB", "USD", "EUR")

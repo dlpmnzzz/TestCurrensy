@@ -4,17 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.RoomDatabase.Callback
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.testcurrency.data.model.local.DbCurrency
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.concurrent.Executors
 
-@Database(entities = [], version = 1, exportSchema = false)
+@Database(entities = [DbCurrency::class], version = 1, exportSchema = false)
 @TypeConverters(MapConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
