@@ -23,4 +23,10 @@ fun <T> Result<T>.successOr(fallback: T): T {
     return (this as? Result.Success<T>)?.data ?: fallback
 }
 
-fun <T>Result<T>.convert
+fun <T,R>Result<T>.convert(transformation: (oldResult: Result.Success<T>) -> Result<R>): Result<R> {
+    return when (this) {
+        is Result.Success -> { transformation(this)}
+        is Result.Loading -> Result.Loading
+        is Result.Error -> Result.Error(this.exception)
+    }
+}

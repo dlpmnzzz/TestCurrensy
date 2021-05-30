@@ -20,8 +20,6 @@ class HomeViewModel(
 
     private var resultJob: Job? = null
 
-    private val _result : MutableLiveData<Result<Float>> = MutableLiveData()
-
     private val fromItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val toItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val _fromResult = SingleLiveEvent<String>()
@@ -34,7 +32,6 @@ class HomeViewModel(
     val fromResult: LiveData<String> = _fromResult
     val toResult: LiveData<String> = _toResult
     val items = listLabels.toTypedArray()
-    val result : LiveData<Result<Float>> = _result
 
     fun itemSelected(which: Int, type: String) {
         val item = getItemsByTypes(type)[which]
@@ -50,7 +47,12 @@ class HomeViewModel(
             resultJob?.cancelIfActive()
             resultJob = viewModelScope.launch {
                 convertUseCase.invoke(param).collect { result ->
-                    _result.value = result
+                    when (result) {
+                        is Result.Success -> setCurrencyResult(type, result.data)
+                        is Result.Error -> showErrorMessage(result.exception)
+                        is Result.Loading -> {}
+                    }
+
                 }
             }
         } else {
