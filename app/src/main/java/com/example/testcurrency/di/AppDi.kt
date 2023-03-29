@@ -1,6 +1,6 @@
 package com.example.testcurrency.di
 
-import com.example.testcurrency.data.Repository
+import com.example.testcurrency.data.CurrencyRepository
 import com.example.testcurrency.data.RepositoryImpl
 import com.example.testcurrency.data.local.AppDatabase
 import com.example.testcurrency.data.local.LocalDataSource
@@ -21,9 +21,9 @@ import org.koin.dsl.module
 val appModule = module {
     viewModel { HomeViewModel(get(), listLabels) }
 
-    single { ConvertCurrencyUseCase(Dispatchers.IO, get()) }
+    single { ConvertCurrencyUseCase(get()) }
 
-    single<Repository> { RepositoryImpl(get(), get(), get(), get()) }
+    single<CurrencyRepository> { RepositoryImpl(get(), get(), get(), get()) }
     single<RemoteDataSource> { RemoteDataSourceImp(RetrofitBuilder.apiService, get()) }
     single<LocalDataSource> { LocalDataSourceImp(get()) }
 

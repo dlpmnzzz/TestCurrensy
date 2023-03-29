@@ -11,6 +11,8 @@ import com.example.testcurrency.utils.SingleLiveEvent
 import com.example.testcurrency.utils.cancelIfActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
@@ -49,18 +51,19 @@ class HomeViewModel(
         if (from != null && to != null) {
             val param = ConvertCurrencyParam(amount, from, to)
             resultJob?.cancelIfActive()
-            resultJob = viewModelScope.launch {
-                convertUseCase.invoke(param).collect { result ->
-                    when (result) {
-                        is Result.Success -> setCurrencyResult(type, result.data)
-                        is Result.Error -> showErrorMessage(result.exception)
-                        is Result.Loading -> {}
-                    }
-
-                }
-            }
+            resultJob = convertUseCase(param).onEach { result ->
+                precessConvertResult(type, result)
+            }.launchIn(viewModelScope)
         } else {
             showErrorMessage(Exception("Choose converted currency"))
+        }
+    }
+
+    private fun precessConvertResult(type: String, result: Result<Float>) {
+        when (result) {
+            is Result.Success -> setCurrencyResult(type, result.data)
+            is Result.Error -> showErrorMessage(result.exception)
+            is Result.Loading -> {}
         }
     }
 

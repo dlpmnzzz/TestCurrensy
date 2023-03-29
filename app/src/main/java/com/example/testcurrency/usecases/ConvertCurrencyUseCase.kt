@@ -1,30 +1,33 @@
 package com.example.testcurrency.usecases
 
-import com.example.testcurrency.data.Repository
-import com.example.testcurrency.utils.Result
-import com.example.testcurrency.utils.convert
-import kotlinx.coroutines.CoroutineDispatcher
+import com.example.testcurrency.data.CurrencyRepository
+import com.example.testcurrency.data.model.Currency
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.map
 
-class ConvertCurrencyUseCase(private val ioDispatcher: CoroutineDispatcher, private val repo: Repository) :
-    BaseUseCase<ConvertCurrencyParam, Float>(ioDispatcher) {
+class ConvertCurrencyUseCase(
+    private val repo: CurrencyRepository
+) : FlowUseCase<ConvertCurrencyParam, Float>() {
+    override fun execute(parameters: ConvertCurrencyParam): Flow<Float> = getFlow(parameters)
 
-    override suspend fun execute(parameters: ConvertCurrencyParam): Flow<Result<Float>> {
-        return repo.getCurrency(parameters.from).transform {
-            val item = it.convert { result ->
-                val currency = result.data
-                val reit = currency.rates[parameters.to]
-                if (reit == null) {
-                    Result.Error(Exception("There is no currency for ${parameters.to}"))
-                } else {
-                    Result.Success(parameters.amount * reit)
-                }
-            }
-            emit(item)
+    private fun getFlow(parameters: ConvertCurrencyParam) =
+        repo.getCurrency(parameters.from).map { currency ->
+            getRates(currency, parameters.to)
+        }.map { rate ->
+            calculateResult(rate, parameters)
         }
-    }
 
+    private fun getRates(currency: Currency, rateName: String) =
+        currency.rates[rateName]
+
+    private fun calculateResult(
+        rate: Float?,
+        parameters: ConvertCurrencyParam
+    ): Float {
+        return rate?.let {
+            parameters.amount * it
+        } ?: error(("There is no currency for ${parameters.to}"))
+    }
 
 }
 

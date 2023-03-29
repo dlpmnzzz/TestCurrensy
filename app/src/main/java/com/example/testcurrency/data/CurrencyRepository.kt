@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.lang.Exception
 
-interface Repository {
-    suspend fun getCurrency(name: String): Flow<Result<Currency>>
+interface CurrencyRepository {
+    fun getCurrency(name: String): Flow<Currency>
 }
 
 class RepositoryImpl(
@@ -20,10 +20,9 @@ class RepositoryImpl(
     private val remote: RemoteDataSource,
     private val dbToUiMapper: DbToUiMapper,
     private val ApiToDbMapper: ApiToDbMapper
-) : Repository {
+) : CurrencyRepository {
 
-    override suspend fun getCurrency(name: String): Flow<Result<Currency>> = flow {
-        emit(Result.Loading)
+    override fun getCurrency(name: String): Flow<Currency> = flow {
         val oldLocalResult = local.getCurrency(name)
         emit(toUiResultOrLoading(oldLocalResult))
 
@@ -35,29 +34,23 @@ class RepositoryImpl(
                 val body = networkCall.body()
                 local.saveCurrency(ApiToDbMapper.map(body!!))
             } else {
-                emit(Result.Error(Exception(networkCall.message())))
+                error(networkCall.message())
             }
 
-            val localItem = getFromLocal(name)
-            if (localItem is Result.Loading) {
-                emit(Result.Error(Exception("Can't get currency for $name")))
-            } else {
-                emit(localItem)
-            }
+            val item = getFromLocal(name)
+            emit(item)
         }
     }
 
-    private suspend fun getFromLocal(name: String): Result<Currency> {
-        val dbSource = local.getCurrency(name) ?: return Result.Loading
-        val item = dbToUiMapper.map(dbSource)
-        return Result.Success(item)
+    private suspend fun getFromLocal(name: String): Currency {
+        val dbSource = local.getCurrency(name) ?: error("not found in db")
+        return dbToUiMapper.map(dbSource)
     }
 
-    private fun toUiResultOrLoading(currency: DbCurrency?): Result<Currency> {
-        return if (currency == null) {
-            Result.Loading
-        } else {
-            Result.Success(dbToUiMapper.map(currency))
+    private fun toUiResultOrLoading(currency: DbCurrency?): Currency {
+        if (currency == null) {
+            error("")
         }
+        return dbToUiMapper.map(currency)
     }
 }
