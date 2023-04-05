@@ -17,6 +17,9 @@ class HomeViewModel(
     private var resultJob: Job? = null
     private var notConvert = false
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val fromItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val toItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
 
@@ -63,10 +66,24 @@ class HomeViewModel(
 
     private fun precessConvertResult(type: String, result: Result<Float>) {
         when (result) {
-            is Result.Success -> setCurrencyResult(type, result.data)
-            is Result.Error -> showError(result.exception)
-            is Result.Loading -> {}
+            is Result.Success -> {
+                hideLoader()
+                setCurrencyResult(type, result.data)
+            }
+            is Result.Error -> {
+                hideLoader()
+                showError(result.exception)
+            }
+            is Result.Loading -> showLoader()
         }
+    }
+
+    private fun showLoader() {
+        _isLoading.update { true }
+    }
+
+    private fun hideLoader() {
+        _isLoading.update { false }
     }
 
     fun swap() {

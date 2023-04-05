@@ -55,6 +55,14 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
             launchAndCollect(viewModel.toAmount) { amount ->
                 binding.toEdit.setText(amount)
             }
+
+            launchAndCollect(viewModel.isLoading) { isVisible ->
+                if (isVisible) {
+                    binding.loader.visibility = View.VISIBLE
+                } else {
+                    binding.loader.visibility = View.GONE
+                }
+            }
         }
     }
 
