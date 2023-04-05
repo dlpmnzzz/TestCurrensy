@@ -7,9 +7,11 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.doAfterTextChanged
 import com.example.testcurrency.databinding.FragmentHomeBinding
 import com.example.testcurrency.ui.base.BaseFragment
-import com.example.testcurrency.utils.setAfterTextChangeListener
+import com.example.testcurrency.utils.fragmentRepeatOnCreated
+import com.example.testcurrency.utils.launchAndCollect
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
@@ -18,18 +20,15 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
     private var isSearchEnteredFrom = false
     private var isSearchEnteredTo = false
     override val viewModel: HomeViewModel by viewModel()
-    private lateinit var binding: FragmentHomeBinding
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
     private var selectedItemPosition = -1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentHomeBinding.inflate(
-            inflater, container, false).apply {
-            lifecycleOwner = viewLifecycleOwner
-        }
-        binding.viewmodel = viewModel
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -37,44 +36,52 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
         super.onViewCreated(view, savedInstanceState)
         initSpinners()
         initEditTexts()
-        viewModel.selectedFrom.observe(viewLifecycleOwner) { item ->
-            item?.let {
-                binding.fromSpinner.text = it
+        initClicks()
+        fragmentRepeatOnCreated {
+            launchAndCollect(viewModel.selectedFromCurrency) { item ->
+                binding.fromSpinner.text = item
                 convertFrom()
             }
-        }
-        viewModel.selectedTo.observe(viewLifecycleOwner) { item ->
-            item?.let {
-                binding.toSpinner.text = it
+
+            launchAndCollect(viewModel.selectedFromCurrency) { item ->
+                binding.toSpinner.text = item
                 convertTo()
             }
+
+            launchAndCollect(viewModel.fromAmount) { amount ->
+                binding.fromEdit.setText(amount)
+            }
+
+            launchAndCollect(viewModel.toAmount) { amount ->
+                binding.toEdit.setText(amount)
+            }
         }
-        viewModel.fromResult.observe(viewLifecycleOwner) {
-            binding.fromEdit.setText(it)
-        }
-        viewModel.toResult.observe(viewLifecycleOwner) {
-            binding.toEdit.setText(it)
+    }
+
+    private fun initClicks() {
+        binding.swapIcon.setOnClickListener {
+            viewModel.swap()
         }
     }
 
     private fun initEditTexts() {
-        binding.fromEdit.setAfterTextChangeListener {
-            if (!isSearchEnteredFrom && viewModel.fromResult.value != binding.fromEdit.text.toString()) {
+        binding.fromEdit.doAfterTextChanged {
+            if (!isSearchEnteredFrom && viewModel.fromAmount.value != binding.fromEdit.text.toString()) {
                 isSearchEnteredFrom = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredFrom = false
                     convertFrom()
-                }, 1000)
+                }, 300)
             }
         }
 
-        binding.toEdit.setAfterTextChangeListener {
-            if (!isSearchEnteredTo && viewModel.toResult.value != binding.toEdit.text.toString()) {
+        binding.toEdit.doAfterTextChanged {
+            if (!isSearchEnteredTo && viewModel.toAmount.value != binding.toEdit.text.toString()) {
                 isSearchEnteredTo = true
                 Handler(Looper.getMainLooper()).postDelayed({
                     isSearchEnteredTo = false
                     convertTo()
-                }, 1000)
+                }, 300)
             }
         }
     }
@@ -133,10 +140,15 @@ class HomeFragment : BaseFragment<HomeViewModel>() {
 
     private fun getCheckedItemPosition(type: String): Int {
         val code = if (type == FROM_TYPE) {
-            viewModel.selectedFrom.value
+            viewModel.selectedFromCurrency.value
         } else {
-            viewModel.selectedTo.value
+            viewModel.selectedToCurrency.value
         }
         return viewModel.items.indexOf(code)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

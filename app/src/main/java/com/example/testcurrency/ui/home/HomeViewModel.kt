@@ -1,19 +1,13 @@
 package com.example.testcurrency.ui.home
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.testcurrency.ui.base.BaseViewModel
 import com.example.testcurrency.usecases.ConvertCurrencyParam
 import com.example.testcurrency.usecases.ConvertCurrencyUseCase
 import com.example.testcurrency.utils.Result
-import com.example.testcurrency.utils.SingleLiveEvent
 import com.example.testcurrency.utils.cancelIfActive
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 
 class HomeViewModel(
     private val convertUseCase: ConvertCurrencyUseCase,
@@ -25,15 +19,23 @@ class HomeViewModel(
 
     private val fromItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
     private val toItems: List<CurrencyLabel> = listLabels.map { CurrencyLabel(it) }
-    private val _fromResult = SingleLiveEvent<String>()
-    private val _toResult = SingleLiveEvent<String>()
-    private val _selectedFrom = MutableLiveData("USD")
-    private val _selectedTo = MutableLiveData("EUR")
 
-    val selectedFrom : LiveData<String> = _selectedFrom
-    val selectedTo : LiveData<String> = _selectedTo
-    val fromResult: LiveData<String> = _fromResult
-    val toResult: LiveData<String> = _toResult
+    private val _selectedFromCurrency = MutableStateFlow("USD")
+    val selectedFromCurrency : StateFlow<String> = _selectedFromCurrency
+
+    private val _selectedToCurrency = MutableStateFlow("EUR")
+    val selectedToCurrency : StateFlow<String> = _selectedToCurrency
+
+    private val _fromAmount = MutableStateFlow(0f)
+    val fromAmount: StateFlow<String> = _fromAmount.map {
+        convertAmountToString(it)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
+
+    private val _toAmount = MutableStateFlow(0f)
+    val toAmount: StateFlow<String> = _toAmount.map {
+        convertAmountToString(it)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
+
     val items = listLabels.toTypedArray()
 
     fun itemSelected(which: Int, type: String) {
@@ -48,46 +50,46 @@ class HomeViewModel(
         }
         val from = getSelected(type)
         val to = getAnotherSelected(type)
-        if (from != null && to != null) {
+        if (from.isNotEmpty() && to.isNotEmpty()) {
             val param = ConvertCurrencyParam(amount, from, to)
             resultJob?.cancelIfActive()
             resultJob = convertUseCase(param).onEach { result ->
                 precessConvertResult(type, result)
             }.launchIn(viewModelScope)
         } else {
-            showErrorMessage(Exception("Choose converted currency"))
+            showError(Exception("Choose converted currency"))
         }
     }
 
     private fun precessConvertResult(type: String, result: Result<Float>) {
         when (result) {
             is Result.Success -> setCurrencyResult(type, result.data)
-            is Result.Error -> showErrorMessage(result.exception)
+            is Result.Error -> showError(result.exception)
             is Result.Loading -> {}
         }
     }
 
     fun swap() {
         notConvert = true
-        val tmp = _selectedTo.value
-        _selectedTo.value = _selectedFrom.value
+        val tmp = _selectedToCurrency.value
+        _selectedToCurrency.update { _selectedFromCurrency.value }
         notConvert = false
-        _selectedFrom.value = tmp
+        _selectedFromCurrency.update { tmp }
     }
 
     private fun setCurrencyResult(type: String, result: Float) {
         if (type == FROM_TYPE) {
-            _toResult.value = result.toString()
+            _toAmount.value = result
         } else {
-            _fromResult.value = result.toString()
+            _fromAmount.value = result
         }
     }
 
     private fun setSelected(type: String, name: String) {
         if (type == FROM_TYPE) {
-            _selectedFrom.value = name
+            _selectedFromCurrency.update { name }
         } else {
-            _selectedTo.value = name
+            _selectedToCurrency.update { name }
         }
     }
 
@@ -99,19 +101,26 @@ class HomeViewModel(
             toItems
         }
 
-    private fun getSelected(type: String): String? =
+    private fun getSelected(type: String): String =
         if (type == FROM_TYPE) {
-            _selectedFrom.value
+            _selectedFromCurrency.value
         } else {
-            _selectedTo.value
+            _selectedToCurrency.value
         }
 
-    private fun getAnotherSelected(type: String) : String? =
+    private fun getAnotherSelected(type: String) : String =
         if (type == FROM_TYPE) {
-            _selectedTo.value
+            _selectedToCurrency.value
         } else {
-            _selectedFrom.value
+            _selectedFromCurrency.value
         }
 
+    private fun convertAmountToString(amount: Float): String {
+        return if (amount != 0f) {
+            amount.toString()
+        } else {
+            ""
+        }
+    }
 
 }

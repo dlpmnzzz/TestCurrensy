@@ -4,10 +4,14 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 
 abstract class BaseFragment<VM : BaseViewModel> : Fragment() {
 
     protected abstract val viewModel: VM
+    val fragmentScope:  LifecycleCoroutineScope
+        get() = viewLifecycleOwner.lifecycleScope
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

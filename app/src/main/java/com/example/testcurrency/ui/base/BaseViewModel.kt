@@ -11,7 +11,11 @@ abstract class BaseViewModel :ViewModel() {
 
     val message : LiveData<String> = _message
 
-    fun showErrorMessage(error: Exception) {
+    fun showError(error: Exception) {
         _message.value = error.message
+    }
+
+    fun showErrorMessage(message: String) {
+        _message.value = message
     }
 }
