@@ -13,5 +13,5 @@ interface CurrencyDao {
     suspend fun insert(currency: DbCurrency)
 
     @Query("SELECT * FROM currency WHERE name = :name")
-    suspend fun getCurrency(name: String) : DbCurrency
+    suspend fun getCurrency(name: String) : DbCurrency?
 }

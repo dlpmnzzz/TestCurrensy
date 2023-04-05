@@ -2,14 +2,16 @@ package com.example.testcurrency.data
 
 import com.example.testcurrency.data.local.LocalDataSource
 import com.example.testcurrency.data.mappers.ApiToDbMapper
-import com.example.testcurrency.data.mappers.DbToUiMapper
+import com.example.testcurrency.data.mappers.DbToDomainMapper
 import com.example.testcurrency.data.model.Currency
 import com.example.testcurrency.data.model.local.DbCurrency
+import com.example.testcurrency.data.model.remote.CurrencyResponseEntity
 import com.example.testcurrency.data.remote.RemoteDataSource
-import com.example.testcurrency.utils.Result
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import java.lang.Exception
+import kotlinx.coroutines.flow.flowOn
 
 interface CurrencyRepository {
     fun getCurrency(name: String): Flow<Currency>
@@ -18,13 +20,16 @@ interface CurrencyRepository {
 class RepositoryImpl(
     private val local: LocalDataSource,
     private val remote: RemoteDataSource,
-    private val dbToUiMapper: DbToUiMapper,
-    private val ApiToDbMapper: ApiToDbMapper
+    private val dbToDomainMapper: DbToDomainMapper,
+    private val ApiToDbMapper: ApiToDbMapper,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CurrencyRepository {
 
     override fun getCurrency(name: String): Flow<Currency> = flow {
         val oldLocalResult = local.getCurrency(name)
-        emit(toUiResultOrLoading(oldLocalResult))
+        oldLocalResult?.let { currency ->
+            emit(currency.toDomain())
+        }
 
         if (oldLocalResult == null ||
             oldLocalResult.nextUpdateTime > System.currentTimeMillis()
@@ -32,7 +37,7 @@ class RepositoryImpl(
             val networkCall = remote.getCurrency(name)
             if (networkCall.isSuccessful) {
                 val body = networkCall.body()
-                local.saveCurrency(ApiToDbMapper.map(body!!))
+                saveToDb(body)
             } else {
                 error(networkCall.message())
             }
@@ -40,17 +45,24 @@ class RepositoryImpl(
             val item = getFromLocal(name)
             emit(item)
         }
+    }.flowOn(ioDispatcher)
+
+    private suspend fun saveToDb(currencyResponseEntity: CurrencyResponseEntity?) {
+        currencyResponseEntity?.let {
+            local.saveCurrency(it.toDb())
+        } ?: error("empty body from response")
     }
 
     private suspend fun getFromLocal(name: String): Currency {
-        val dbSource = local.getCurrency(name) ?: error("not found in db")
-        return dbToUiMapper.map(dbSource)
+        val dbCurrency = local.getCurrency(name) ?: error("not found in db")
+        return dbCurrency.toDomain()
     }
 
-    private fun toUiResultOrLoading(currency: DbCurrency?): Currency {
-        if (currency == null) {
-            error("")
-        }
-        return dbToUiMapper.map(currency)
+    private fun DbCurrency.toDomain(): Currency {
+        return dbToDomainMapper.map(this)
+    }
+
+    private fun CurrencyResponseEntity.toDb(): DbCurrency {
+        return ApiToDbMapper.map(this)
     }
 }

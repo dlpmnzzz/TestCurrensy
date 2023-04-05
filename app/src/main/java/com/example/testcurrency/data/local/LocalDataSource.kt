@@ -8,7 +8,7 @@ interface LocalDataSource {
 }
 
 class LocalDataSourceImp(private val db: AppDatabase) : LocalDataSource {
-    override suspend fun getCurrency(name: String): DbCurrency {
+    override suspend fun getCurrency(name: String): DbCurrency? {
         return db.currencyDao().getCurrency(name)
     }
 
